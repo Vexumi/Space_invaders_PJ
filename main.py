@@ -34,6 +34,7 @@ class MainGame:
         self.height = height
         self.dificulty = dificulty
         self.all_sprites = pygame.sprite.Group()
+        self.bullets = []
         self.init_game()
         self.run()
 
@@ -54,7 +55,7 @@ class MainGame:
 
     def run(self):
         self.running = True
-        self.speed = 1
+        self.speed = 2.3
         self.fps = 60
         self.clock = pygame.time.Clock()
 
@@ -62,13 +63,24 @@ class MainGame:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        self.bullets.append(
+                            Bullet(self, self.hero.rect.x + 35,
+                                   self.hero.rect.y, self.all_sprites))
                 eventt = event
+            self.delete_bullet()
             self.update_sprites(eventt)
             self.screen.fill((0, 0, 0))
             self.all_sprites.draw(self.screen)
-            self.clock.tick(self.fps)
+            self.clock.tick(int(self.fps * self.speed))
             pygame.display.flip()
         pygame.quit()
+
+    def delete_bullet(self):
+        for bullet in self.bullets:
+            if bullet.rect.y <= 0:
+                del self.bullets[self.bullets.index(bullet)]
 
     def displayText(self, text):
         pygame.font.init()
@@ -80,6 +92,9 @@ class MainGame:
         for i in self.all_sprites:
             i.update(event)
 
+    # класс героя
+
+
 class Hero(pygame.sprite.Sprite):
     def __init__(self, game, hp, all_sprites):
         super().__init__(all_sprites)
@@ -90,18 +105,17 @@ class Hero(pygame.sprite.Sprite):
 
     # инициализация героя
     def init_hero(self):
-        self.hero_speed = 5
+        self.hero_speed = 4
 
         # создание спрайта персонажа, как точку
-        radius = 10
-        self.image = pygame.Surface((2 * radius, 2 * radius), pygame.SRCALPHA, 32)
-        pygame.draw.circle(self.image, pygame.Color("red"), (radius, radius), radius)
-        self.rect = pygame.Rect(int(self.game.width / 2), self.game.height - 50, 2 * radius,
-                                2 * radius)
+        self.image = load_image('hero.png', (255, 255, 255))
+        self.image = pygame.transform.scale(self.image, (80, 80))
+        self.rect = pygame.Rect(int(self.game.width / 2), self.game.height - 50, 100, 90)
 
         self.pos_x = int(self.game.width / 2)
         self.pos_y = self.game.height - 50
 
+    # движение, стрельба героя и т.д
     def update(self, event):
         pressed = pygame.key.get_pressed()
         if pressed[pygame.K_DOWN]:
@@ -118,5 +132,27 @@ class Hero(pygame.sprite.Sprite):
             self.rect.x = self.pos_x
 
 
+class Bullet(pygame.sprite.Sprite):
+    def __init__(self, game, x, y, all_sprites):
+        super().__init__(all_sprites)
+        self.x = x
+        self.y = y
+        self.game = game
+        self.bullet_speed = 7
+
+        self.radius = 5
+        self.image = pygame.Surface((2 * self.radius, 2 * self.radius), pygame.SRCALPHA, 32)
+        self.rect = pygame.Rect(self.x, self.y, 2 * self.radius, 2 * self.radius)
+
+    def draw(self):
+        pygame.draw.circle(self.image, pygame.Color("red"), (self.radius, self.radius),
+                           self.radius)
+        self.rect.y -= self.bullet_speed
+
+    def update(self, event):
+        self.draw()
+
+
+# создание игры
 if __name__ == '__main__':
     game = MainGame(500, 700, 'Normal')
