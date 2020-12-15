@@ -101,6 +101,7 @@ class Hero(pygame.sprite.Sprite):
         self.hp_hero = hp
         self.game = game
         self.all_sprites = all_sprites
+        self.diraction = None
         self.init_hero()
 
     # инициализация героя
@@ -127,9 +128,41 @@ class Hero(pygame.sprite.Sprite):
         if pressed[pygame.K_LEFT]:
             self.pos_x -= self.hero_speed
             self.rect.x = self.pos_x
+            if self.diraction == None:
+                self.diraction = 'Left'
+            elif self.diraction == 'Right':
+                self.diraction = None
         if pressed[pygame.K_RIGHT]:
             self.pos_x += self.hero_speed
             self.rect.x = self.pos_x
+            if self.diraction == None:
+                self.diraction = 'Right'
+            elif self.diraction == 'Left':
+                self.diraction = None
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_RIGHT or \
+                    event.key == pygame.K_LEFT or \
+                    event.key == pygame.K_UP or \
+                    event.key == pygame.K_DOWN:
+                self.diraction = None
+
+        self.change_image()
+        self.check_collision()
+
+    def change_image(self):
+        if self.diraction == None:
+            self.image = load_image('hero.png', (255, 255, 255))
+            self.image = pygame.transform.scale(self.image, (80, 80))
+        elif self.diraction == 'Left':
+            self.image = load_image('hero_left.png', (255, 255, 255))
+            self.image = pygame.transform.scale(self.image, (80, 80))
+        elif self.diraction == 'Right':
+            self.image = load_image('hero_right.png', (255, 255, 255))
+            self.image = pygame.transform.scale(self.image, (80, 80))
+
+    ### in developing
+    def check_collision(self):
+        pass
 
 
 class Bullet(pygame.sprite.Sprite):
