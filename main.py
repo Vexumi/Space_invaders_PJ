@@ -51,7 +51,8 @@ class MainGame:
         elif self.dificulty == 'God of gamers':
             self.hp = 1
 
-        self.hero = Hero(self, self.hp, self.all_sprites)
+        self.hero = Hero(self, self.hp, self.all_sprites, self.screen.get_size())
+        self.alien = Aliens(self, self.all_sprites)
 
     def run(self):
         self.running = True
@@ -72,6 +73,7 @@ class MainGame:
             self.delete_bullet()
             self.update_sprites(eventt)
             self.screen.fill((0, 0, 0))
+            self.display_hero_stats()
             self.all_sprites.draw(self.screen)
             self.clock.tick(int(self.fps * self.speed))
             pygame.display.flip()
@@ -80,6 +82,7 @@ class MainGame:
     def delete_bullet(self):
         for bullet in self.bullets:
             if bullet.rect.y <= 0:
+                bullet.kill()
                 del self.bullets[self.bullets.index(bullet)]
 
     def displayText(self, text):
@@ -88,20 +91,28 @@ class MainGame:
         textsurface = font.render(text, False, (44, 0, 62))
         self.screen.blit(textsurface, (110, 160))
 
+    def display_hero_stats(self):
+        pygame.font.init()
+        font = pygame.font.SysFont('Arial', 30)
+        textsurface = font.render('HP: ' + str(self.hero.hp_hero), False, (0, 255, 0))
+        self.screen.blit(textsurface, (self.width - 100, self.height - 50))
+
     def update_sprites(self, event):
         for i in self.all_sprites:
             i.update(event)
+        self.hero.check_collision()
 
     # класс героя
 
 
 class Hero(pygame.sprite.Sprite):
-    def __init__(self, game, hp, all_sprites):
+    def __init__(self, game, hp, all_sprites, sc_size):
         super().__init__(all_sprites)
         self.hp_hero = hp
         self.game = game
         self.all_sprites = all_sprites
         self.diraction = None
+        self.screen_size = sc_size
         self.init_hero()
 
     # инициализация героя
@@ -160,9 +171,17 @@ class Hero(pygame.sprite.Sprite):
             self.image = load_image('hero_right.png', (255, 255, 255))
             self.image = pygame.transform.scale(self.image, (80, 80))
 
-    ### in developing
     def check_collision(self):
-        pass
+        if self.rect.x <= 0:
+            self.rect.x = 0
+            self.pos_x = 0
+        elif self.rect.x >= self.screen_size[0] - 80:
+            self.rect.x = self.screen_size[0] - 80
+            self.pos_x = self.screen_size[0] - 80
+
+        if self.rect.y >= self.screen_size[1] - 80:
+            self.rect.y = self.screen_size[1] - 80
+            self.pos_y = self.screen_size[1] - 80
 
 
 class Bullet(pygame.sprite.Sprite):
@@ -186,6 +205,76 @@ class Bullet(pygame.sprite.Sprite):
         self.draw()
 
 
+class Aliens(pygame.sprite.Sprite):
+    type_of_aliens = ['S', 'M', 'L']
+
+    def __init__(self, game, all_sprites):
+        super().__init__(all_sprites)
+        self.game = game
+        self.all_sprites = all_sprites
+        self.d_x = 'Right'
+        self.d_y = 'UP'
+        self.type_of_alien = self.type_of_aliens[random.randint(0, 2)]
+
+        self.type_of_alien = 'M'
+
+        self.init_alien()
+
+    def init_alien(self):
+        self.alien_speed = 2
+
+        # создание спрайта персонажа, как точку
+        self.image = load_image('alien_1.png', (255, 255, 255))
+        self.image = pygame.transform.scale(self.image, (80, 80))
+        self.rect = pygame.Rect(int(self.game.width / 2), 0, 100, 90)
+
+        self.pos_x = int(self.game.width / 2)
+        self.pos_y = 0
+
+    def update(self, *args):
+        if self.type_of_alien == 'S':
+            if self.d_x == 'Right':
+                self.pos_x += self.alien_speed
+            elif self.d_x == 'Left':
+                self.pos_x -= self.alien_speed
+
+            if self.pos_x <= 0:
+                self.pos_x = 0
+                self.d_x = 'Right'
+            elif self.pos_x >= self.game.width - 80:
+                self.pos_x = self.game.width - 80
+                self.d_x = 'Left'
+            self.rect.x = self.pos_x
+
+        elif self.type_of_alien == 'M':
+            if self.d_x == 'Right':
+                self.pos_x += self.alien_speed
+            elif self.d_x == 'Left':
+                self.pos_x -= self.alien_speed
+
+            if self.pos_x <= 0:
+                self.pos_x = 0
+                self.d_x = 'Right'
+            elif self.pos_x >= self.game.width - 80:
+                self.pos_x = self.game.width - 80
+                self.d_x = 'Left'
+
+            if self.d_y == 'Up':
+                self.pos_y += int(self.alien_speed / 2)
+            elif self.d_y == 'Down':
+                self.pos_y -= int(self.alien_speed / 2)
+
+            if self.pos_y <= 0:
+                self.pos_y = 0
+                self.d_y = 'Up'
+            elif self.pos_y >= int(self.game.height / 3):
+                self.pos_y = int(self.game.height / 3)
+                self.d_y = 'Down'
+
+            self.rect.x = self.pos_x
+            self.rect.y = self.pos_y
+
+
 # создание игры
 if __name__ == '__main__':
-    game = MainGame(500, 700, 'Normal')
+    game = MainGame(550, 700, 'Normal')
