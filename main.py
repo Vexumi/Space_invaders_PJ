@@ -1,89 +1,118 @@
-# загрузка библиотек
 import pygame
-import os
-import sys
-import random
+import json
 
-# инициализация Pygame
-pygame.init()
-pygame.display.set_caption('Space Invaders')
-
-
-# создание картинки для спрайтов
-def load_image(name, colorkey=None):
-    fullname = os.path.join('data', name)
-    if not os.path.isfile(fullname):
-        print(f"Файл с изображением '{fullname}' не найден")
-        sys.exit()
-    image = pygame.image.load(fullname)
-
-    if colorkey is not None:
-        image = image.convert()
-        if colorkey == -1:
-            colorkey = image.get_at((0, 0))
-        image.set_colorkey(colorkey)
-    else:
-        image = image.convert_alpha()
-    return image
+from Aliens import Aliens
+from BulletEnemy import BulletEnemy
+from Hero import Hero
+from Bullet import Bullet
+from SpawnLevelEntities import Spawner
+from Lasers import Lasers
+from FirstRoundInstructions import give_instructions
+from HeroShoot import Shoot
+from BackgroundStars import BackgroundStars
 
 
-# главный класс игры
 class MainGame:
-    def __init__(self, width, height, dificulty):
-        self.width = width
-        self.height = height
-        self.dificulty = dificulty
+    def __init__(self, screen_size, difficulty):
+        self.width = screen_size[0]
+        self.height = screen_size[1]
+        self.difficulty = difficulty
         self.all_sprites = pygame.sprite.Group()
+        self.wave_count = 0
         self.bullets = []
+        self.aliens = []
+        self.abilities = []
+        self.shotgun_fire_count = 0
+        self.shotgun_fire_max = 5
+        self.explosion_group = pygame.sprite.Group()
+        self.n_aliens = 1
+        self.wait_new_wave = False
         self.init_game()
         self.run()
 
     def init_game(self):
+        with open('waves.json', mode='r') as json_file:
+            self.waves = json.load(json_file)
+            json_file.close()
+
         self.screen = pygame.display.set_mode((self.width, self.height))
         self.screen.fill(pygame.Color('black'))
 
-        if self.dificulty == 'Low':
-            self.hp = 1000
-        elif self.dificulty == 'Normal':
+        if self.difficulty == 'Low':
+            self.hp = 200
+        elif self.difficulty == 'Normal':
             self.hp = 100
-        elif self.dificulty == 'Hard':
+        elif self.difficulty == 'Hard':
             self.hp = 20
-        elif self.dificulty == 'God of gamers':
+        elif self.difficulty == 'God of gamers':
             self.hp = 1
 
         self.hero = Hero(self, self.hp, self.all_sprites, self.screen.get_size())
-        self.alien = Aliens(self, self.all_sprites)
+
+        wave = self.waves[f'Wave {str(self.wave_count)}']
+        spawned = Spawner(self, wave)
+        self.aliens = spawned[0]
+        self.lasers = spawned[1]
 
     def run(self):
         self.running = True
         self.speed = 2.3
         self.fps = 60
         self.clock = pygame.time.Clock()
+        bg = BackgroundStars(self, 400)
 
         while self.running:
+            # self.screen.fill((0, 0, 0))
+            bg.draw()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        self.bullets.append(
-                            Bullet(self, self.hero.rect.x + 35,
-                                   self.hero.rect.y, self.all_sprites))
+
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 or event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
+                    Shoot(self)
                 eventt = event
+
             self.delete_bullet()
+            self.damage_test()
+            self.ability_test()
+            self.enemies_left()
             self.update_sprites(eventt)
-            self.screen.fill((0, 0, 0))
             self.display_hero_stats()
             self.all_sprites.draw(self.screen)
+            self.explosion_group.draw(self.screen)
+            self.explosion_group.update()
             self.clock.tick(int(self.fps * self.speed))
             pygame.display.flip()
         pygame.quit()
 
     def delete_bullet(self):
         for bullet in self.bullets:
-            if bullet.rect.y <= 0:
+            if bullet.rect.y <= 0 or bullet.rect.y >= self.height:
                 bullet.kill()
                 del self.bullets[self.bullets.index(bullet)]
+
+    def ability_test(self):
+        for ability in self.abilities:
+            if ability.check_collision(pygame.sprite.Group(self.hero)):
+                del self.abilities[self.abilities.index(ability)]
+                ability.kill()
+
+    def damage_test(self):
+        for n, bullet in enumerate(self.bullets):
+            if bullet.check_collision(self.aliens):
+                if type(bullet) == Bullet:
+                    self.aliens[self.aliens.index(bullet.check_collision(self.aliens))].do_damage(self.hero.damage)
+                    del self.bullets[self.bullets.index(bullet)]
+                    bullet.kill()
+
+            if bullet.check_collision(self.lasers):
+                if type(bullet) == Bullet:
+                    self.lasers[self.lasers.index(bullet.check_collision(self.lasers))].do_damage(self.hero.damage)
+                    try:
+                        del self.bullets[self.bullets.index(bullet)]
+                    except ValueError:
+                        print('Bullet ValueError')
+                    bullet.kill()
 
     def displayText(self, text):
         pygame.font.init()
@@ -102,179 +131,42 @@ class MainGame:
             i.update(event)
         self.hero.check_collision()
 
-    # класс героя
+    def enemies_left(self):
+        if len(self.aliens) + len(self.lasers) == 0:
+            if not self.wait_new_wave:
+                self.wait_new_wave = True
+            else:
+                if self.hero.pos_y <= -50:
+                    self.hero.pos_x = self.width / 2
+                    self.hero.pos_y = self.height - self.height / 4
+                    for ability in self.abilities:
+                        ability.kill()
+                    self.wave_count += 1
+                    wave = self.waves[f'Wave {str(self.wave_count)}']
+                    spawned = Spawner(self, wave)
+                    self.aliens = spawned[0]
+                    self.lasers = spawned[1]
 
+                elif self.wave_count == 0:  # if first round give instructions
+                    give_instructions(self)
+                    self.draw_arrow_up()
 
-class Hero(pygame.sprite.Sprite):
-    def __init__(self, game, hp, all_sprites, sc_size):
-        super().__init__(all_sprites)
-        self.hp_hero = hp
-        self.game = game
-        self.all_sprites = all_sprites
-        self.diraction = None
-        self.screen_size = sc_size
-        self.init_hero()
+                else:
+                    font = pygame.font.Font(None, 60)
+                    text = f'WAVE {str(self.wave_count + 1)}'
+                    text_pos = (self.width / 2 - 80, self.height / 4 - 50)
+                    self.screen.blit(font.render(text, False, (255, 255, 255)), text_pos)
+                    self.draw_arrow_up()
 
-    # инициализация героя
-    def init_hero(self):
-        self.hero_speed = 4
+    def draw_arrow_up(self):
+        arrow_thin = 3
 
-        # создание спрайта персонажа, как точку
-        self.image = load_image('hero.png', (255, 255, 255))
-        self.image = pygame.transform.scale(self.image, (80, 80))
-        self.rect = pygame.Rect(int(self.game.width / 2), self.game.height - 50, 100, 90)
+        # arrow up head
+        arrow_head_pts = [[self.width / 2, self.height / 16],
+                          [self.width / 2 + 20, self.height / 16 + 20],
+                          [self.width / 2 - 20, self.height / 16 + 20]]
+        pygame.draw.polygon(self.screen, 'white', arrow_head_pts, arrow_thin)
 
-        self.pos_x = int(self.game.width / 2)
-        self.pos_y = self.game.height - 50
-
-    # движение, стрельба героя и т.д
-    def update(self, event):
-        pressed = pygame.key.get_pressed()
-        if pressed[pygame.K_DOWN]:
-            self.pos_y += self.hero_speed
-            self.rect.y = self.pos_y
-        if pressed[pygame.K_UP]:
-            self.pos_y -= self.hero_speed
-            self.rect.y = self.pos_y
-        if pressed[pygame.K_LEFT]:
-            self.pos_x -= self.hero_speed
-            self.rect.x = self.pos_x
-            if self.diraction == None:
-                self.diraction = 'Left'
-            elif self.diraction == 'Right':
-                self.diraction = None
-        if pressed[pygame.K_RIGHT]:
-            self.pos_x += self.hero_speed
-            self.rect.x = self.pos_x
-            if self.diraction == None:
-                self.diraction = 'Right'
-            elif self.diraction == 'Left':
-                self.diraction = None
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_RIGHT or \
-                    event.key == pygame.K_LEFT or \
-                    event.key == pygame.K_UP or \
-                    event.key == pygame.K_DOWN:
-                self.diraction = None
-
-        self.change_image()
-        self.check_collision()
-
-    def change_image(self):
-        if self.diraction == None:
-            self.image = load_image('hero.png', (255, 255, 255))
-            self.image = pygame.transform.scale(self.image, (80, 80))
-        elif self.diraction == 'Left':
-            self.image = load_image('hero_left.png', (255, 255, 255))
-            self.image = pygame.transform.scale(self.image, (80, 80))
-        elif self.diraction == 'Right':
-            self.image = load_image('hero_right.png', (255, 255, 255))
-            self.image = pygame.transform.scale(self.image, (80, 80))
-
-    def check_collision(self):
-        if self.rect.x <= 0:
-            self.rect.x = 0
-            self.pos_x = 0
-        elif self.rect.x >= self.screen_size[0] - 80:
-            self.rect.x = self.screen_size[0] - 80
-            self.pos_x = self.screen_size[0] - 80
-
-        if self.rect.y >= self.screen_size[1] - 80:
-            self.rect.y = self.screen_size[1] - 80
-            self.pos_y = self.screen_size[1] - 80
-
-
-class Bullet(pygame.sprite.Sprite):
-    def __init__(self, game, x, y, all_sprites):
-        super().__init__(all_sprites)
-        self.x = x
-        self.y = y
-        self.game = game
-        self.bullet_speed = 7
-
-        self.radius = 5
-        self.image = pygame.Surface((2 * self.radius, 2 * self.radius), pygame.SRCALPHA, 32)
-        self.rect = pygame.Rect(self.x, self.y, 2 * self.radius, 2 * self.radius)
-
-    def draw(self):
-        pygame.draw.circle(self.image, pygame.Color("red"), (self.radius, self.radius),
-                           self.radius)
-        self.rect.y -= self.bullet_speed
-
-    def update(self, event):
-        self.draw()
-
-
-class Aliens(pygame.sprite.Sprite):
-    type_of_aliens = ['S', 'M', 'L']
-
-    def __init__(self, game, all_sprites):
-        super().__init__(all_sprites)
-        self.game = game
-        self.all_sprites = all_sprites
-        self.d_x = 'Right'
-        self.d_y = 'UP'
-        self.type_of_alien = self.type_of_aliens[random.randint(0, 2)]
-
-        self.type_of_alien = 'M'
-
-        self.init_alien()
-
-    def init_alien(self):
-        self.alien_speed = 2
-
-        # создание спрайта персонажа, как точку
-        self.image = load_image('alien_1.png', (255, 255, 255))
-        self.image = pygame.transform.scale(self.image, (80, 80))
-        self.rect = pygame.Rect(int(self.game.width / 2), 0, 100, 90)
-
-        self.pos_x = int(self.game.width / 2)
-        self.pos_y = 0
-
-    def update(self, *args):
-        if self.type_of_alien == 'S':
-            if self.d_x == 'Right':
-                self.pos_x += self.alien_speed
-            elif self.d_x == 'Left':
-                self.pos_x -= self.alien_speed
-
-            if self.pos_x <= 0:
-                self.pos_x = 0
-                self.d_x = 'Right'
-            elif self.pos_x >= self.game.width - 80:
-                self.pos_x = self.game.width - 80
-                self.d_x = 'Left'
-            self.rect.x = self.pos_x
-
-        elif self.type_of_alien == 'M':
-            if self.d_x == 'Right':
-                self.pos_x += self.alien_speed
-            elif self.d_x == 'Left':
-                self.pos_x -= self.alien_speed
-
-            if self.pos_x <= 0:
-                self.pos_x = 0
-                self.d_x = 'Right'
-            elif self.pos_x >= self.game.width - 80:
-                self.pos_x = self.game.width - 80
-                self.d_x = 'Left'
-
-            if self.d_y == 'Up':
-                self.pos_y += int(self.alien_speed / 2)
-            elif self.d_y == 'Down':
-                self.pos_y -= int(self.alien_speed / 2)
-
-            if self.pos_y <= 0:
-                self.pos_y = 0
-                self.d_y = 'Up'
-            elif self.pos_y >= int(self.game.height / 3):
-                self.pos_y = int(self.game.height / 3)
-                self.d_y = 'Down'
-
-            self.rect.x = self.pos_x
-            self.rect.y = self.pos_y
-
-
-# создание игры
-if __name__ == '__main__':
-    game = MainGame(550, 700, 'Normal')
+        # arrow up body
+        arrow_body_pts = [self.width / 2 - 8, self.height / 16 + 20, 18, 50]
+        pygame.draw.rect(self.screen, 'white', arrow_body_pts, arrow_thin)

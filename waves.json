@@ -1,0 +1,7 @@
+{
+  "Wave 0": {"Aliens": 0, "Lasers":  0, "Abilities": {}},
+  "Wave 1": {"Aliens": 1, "Lasers":  0, "Abilities": {"Health": 1, "Shotgun": 1}},
+  "Wave 2": {"Aliens": 2, "Lasers":  0, "Abilities": {}},
+  "Wave 3": {"Aliens": 2, "Lasers":  1, "Abilities": {}},
+  "Wave 4": {"Aliens": 2, "Lasers":  2, "Abilities": {"Health": 1}}
+}
