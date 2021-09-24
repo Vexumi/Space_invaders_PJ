@@ -1,5 +1,6 @@
 import pygame
 import json
+import sys
 
 from Aliens import Aliens
 from BulletEnemy import BulletEnemy
@@ -11,12 +12,17 @@ from FirstRoundInstructions import give_instructions
 from HeroShoot import Shoot
 from BackgroundStars import BackgroundStars
 
+"""
+This file contains main cycle
+"""
+
 
 class MainGame:
-    def __init__(self, screen_size, difficulty):
+    def __init__(self, screen_size, difficulty, music_on):
         self.width = screen_size[0]
         self.height = screen_size[1]
         self.difficulty = difficulty
+        self.music_on = music_on
         self.all_sprites = pygame.sprite.Group()
         self.wave_count = 0
         self.bullets = []
@@ -67,6 +73,8 @@ class MainGame:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
+                    pygame.quit()
+                    sys.exit(-1)
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 or event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
                     Shoot(self)
@@ -83,7 +91,7 @@ class MainGame:
             self.explosion_group.update()
             self.clock.tick(int(self.fps * self.speed))
             pygame.display.flip()
-        pygame.quit()
+        # pygame.quit()
 
     def delete_bullet(self):
         for bullet in self.bullets:
@@ -139,17 +147,23 @@ class MainGame:
                 if self.hero.pos_y <= -50:
                     self.hero.pos_x = self.width / 2
                     self.hero.pos_y = self.height - self.height / 4
+                    self.hero.rect.x = self.width / 2
+                    self.hero.rect.y = self.height - self.height / 4
                     for ability in self.abilities:
                         ability.kill()
                     self.wave_count += 1
-                    wave = self.waves[f'Wave {str(self.wave_count)}']
-                    spawned = Spawner(self, wave)
-                    self.aliens = spawned[0]
-                    self.lasers = spawned[1]
-
+                    try:
+                        wave = self.waves[f'Wave {str(self.wave_count)}']
+                        spawned = Spawner(self, wave)
+                        self.aliens = spawned[0]
+                        self.lasers = spawned[1]
+                    except KeyError:
+                        self.running = False
+                    self.hero.invisible_wall = True
                 elif self.wave_count == 0:  # if first round give instructions
                     give_instructions(self)
                     self.draw_arrow_up()
+                    self.hero.invisible_wall = False
 
                 else:
                     font = pygame.font.Font(None, 60)
@@ -157,6 +171,7 @@ class MainGame:
                     text_pos = (self.width / 2 - 80, self.height / 4 - 50)
                     self.screen.blit(font.render(text, False, (255, 255, 255)), text_pos)
                     self.draw_arrow_up()
+                    self.hero.invisible_wall = False
 
     def draw_arrow_up(self):
         arrow_thin = 3

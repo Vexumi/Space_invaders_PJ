@@ -3,6 +3,11 @@ import sys
 
 from Bullet import Bullet
 from ImageLoader import load_image
+from ExplosionParticles import Explosion
+
+"""
+Main Hero of the game
+"""
 
 
 class Hero(pygame.sprite.Sprite):
@@ -17,6 +22,7 @@ class Hero(pygame.sprite.Sprite):
         self.screen_size = sc_size
         self.init_hero()
         self.damage = 10
+        self.invisible_wall = True
 
     # инициализация героя
     def init_hero(self):
@@ -37,8 +43,13 @@ class Hero(pygame.sprite.Sprite):
             self.pos_y += self.hero_speed
             self.rect.y = self.pos_y
         if pressed[pygame.K_UP] or pressed[pygame.K_w]:
-            self.pos_y -= self.hero_speed
-            self.rect.y = self.pos_y
+            if self.invisible_wall:
+                if self.rect.y >= self.screen_size[1] // 2:
+                    self.pos_y -= self.hero_speed
+                    self.rect.y = self.pos_y
+            else:
+                self.pos_y -= self.hero_speed
+                self.rect.y = self.pos_y
         if pressed[pygame.K_LEFT] or pressed[pygame.K_a]:
             self.pos_x -= self.hero_speed
             self.rect.x = self.pos_x
@@ -64,7 +75,7 @@ class Hero(pygame.sprite.Sprite):
         if self.hp_hero <= 0:
             # del self.game.hero[self.game.hero.index(self)]
             self.kill()
-            sys.exit(0)
+            self.game.running = False
 
         self.change_image()
         self.check_collision()
@@ -96,8 +107,15 @@ class Hero(pygame.sprite.Sprite):
         if bullet_collided:
             if type(bullet_collided) != Bullet:
                 self.do_damage(bullet_collided.damage)
+                try:
+                    bullet_collided.sound.stop()
+                except AttributeError:
+                    pass
                 bullet_collided.kill()
                 del self.game.bullets[self.game.bullets.index(bullet_collided)]
 
     def do_damage(self, damage):
         self.hp_hero -= damage
+        self.game.explosion_group.add(Explosion(self.rect.x + 35, self.rect.y, 2))
+        if self.game.music_on:
+            pygame.mixer.Sound('sounds/ExploseSound.mp3').play()

@@ -10,6 +10,9 @@ class BulletEnemy(pygame.sprite.Sprite):
         self.bullet_speed = 7
         self.damage = 10
 
+        if self.game.game.music_on:
+            pygame.mixer.Sound('sounds/EnemyBulletSound.mp3').play()
+
         self.radius = 5
         self.image = pygame.Surface((2 * self.radius, 2 * self.radius), pygame.SRCALPHA, 32)
         self.rect = pygame.Rect(self.x, self.y, 2 * self.radius, 2 * self.radius)

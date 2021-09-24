@@ -1,6 +1,10 @@
 import pygame
 from ImageLoader import load_image
 
+"""
+Particles for explose of bullets or enemy death
+"""
+
 
 class Explosion(pygame.sprite.Sprite):
     def __init__(self, x, y, type_exp):

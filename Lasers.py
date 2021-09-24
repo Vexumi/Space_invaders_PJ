@@ -6,6 +6,10 @@ from ImageLoader import load_image
 from BulletLaser import BulletLaser
 from ExplosionParticles import Explosion
 
+"""
+Enemy - laser. Shoots at 3-4 seconds, damage 20 hp, self hp = 60
+"""
+
 
 class Lasers(pygame.sprite.Sprite):
     d_x = ['Right', 'Left']
@@ -17,7 +21,7 @@ class Lasers(pygame.sprite.Sprite):
         self.all_sprites = all_sprites
         self.d_x = self.d_x[random.randint(0, 1)]
         self.d_y = self.d_y[random.randint(0, 1)]
-        self.shoot_delay = random.randint(3, 5)
+        self.shoot_delay = random.randint(3, 4)
         self.alien_id = random.randint(0, 100)
         self.laser = None
         self.laser_life_time = 2
@@ -71,6 +75,10 @@ class Lasers(pygame.sprite.Sprite):
         if self.hp <= 0:
             del self.game.lasers[self.game.lasers.index(self)]
             if self.laser:
+                try:
+                    self.laser.sound.stop()
+                except AttributeError:
+                    pass
                 self.laser.kill()
             schedule.clear(f'shoot {self.alien_id}')
             schedule.clear(f'laser {self.alien_id}')
@@ -87,6 +95,10 @@ class Lasers(pygame.sprite.Sprite):
     def kill_laser(self):
         for bullet in self.game.bullets:
             if type(bullet) == BulletLaser:
+                try:
+                    bullet.sound.stop()
+                except AttributeError:
+                    pass
                 bullet.kill()
                 schedule.clear(f'laser {self.alien_id}')
                 del self.game.bullets[self.game.bullets.index(bullet)]

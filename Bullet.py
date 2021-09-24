@@ -1,6 +1,10 @@
 import pygame
 from ExplosionParticles import Explosion
 
+"""
+Type of bullets for Hero
+"""
+
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, game, x, y, all_sprites):
@@ -9,6 +13,8 @@ class Bullet(pygame.sprite.Sprite):
         self.y = y
         self.game = game
         self.bullet_speed = 7
+        if self.game.music_on:
+            pygame.mixer.Sound('sounds/BulletSound.mp3').play()
 
         self.radius = 5
         self.image = pygame.Surface((2 * self.radius, 2 * self.radius), pygame.SRCALPHA, 32)

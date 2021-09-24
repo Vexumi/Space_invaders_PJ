@@ -1,5 +1,1 @@
-{
-  "music_on": true,
-  "difficulty": "Normal",
-  "screen_size": [600, 700]
-}
+{"screen_size": [600, 700], "music_on": true, "difficulty": "Normal"}

@@ -1,7 +1,8 @@
 import pygame
 import json
 from main import MainGame
-
+from Menu import Menu
+from Intro import Intro
 with open('settings.json', mode='r') as json_file:
     json_data = json.load(json_file)
     json_file.close()
@@ -17,4 +18,6 @@ pygame.display.set_caption('Space Invaders')
 
 # создание игры
 if __name__ == '__main__':
-    game = MainGame(screen_size, difficulty)
+    intro = Intro(screen_size)
+    game = Menu(screen_size, difficulty, music_on)
+    pygame.quit()

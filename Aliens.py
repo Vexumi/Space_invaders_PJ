@@ -5,6 +5,10 @@ from BulletEnemy import BulletEnemy
 from ImageLoader import load_image
 from ExplosionParticles import Explosion
 
+"""
+Type of Enemy - Alien, damage 10, self hp = 30-150
+"""
+
 
 class Aliens(pygame.sprite.Sprite):
     type_of_aliens = ['S', 'M', 'L']
