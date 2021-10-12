@@ -2,13 +2,13 @@ import pygame
 
 
 class BulletEnemy(pygame.sprite.Sprite):
-    def __init__(self, game, x, y, all_sprites):
+    def __init__(self, game, x, y, all_sprites, damage=10):
         super().__init__(all_sprites)
         self.x = x
         self.y = y
         self.game = game
         self.bullet_speed = 7
-        self.damage = 10
+        self.damage = damage
 
         if self.game.game.music_on:
             pygame.mixer.Sound('sounds/EnemyBulletSound.mp3').play()
@@ -20,10 +20,10 @@ class BulletEnemy(pygame.sprite.Sprite):
     def draw(self):
         pygame.draw.circle(self.image, pygame.Color("red"), (self.radius, self.radius),
                            self.radius)
-        self.rect.y += self.bullet_speed
 
     def update(self, event):
         self.draw()
+        self.rect.y += self.bullet_speed
 
     def check_collision(self, target):
         if pygame.sprite.spritecollide(self, target, False):

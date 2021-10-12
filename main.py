@@ -1,16 +1,21 @@
 import pygame
+import random
 import json
 import sys
 
-from Aliens import Aliens
-from BulletEnemy import BulletEnemy
-from Hero import Hero
 from Bullet import Bullet
+
 from SpawnLevelEntities import Spawner
-from Lasers import Lasers
-from FirstRoundInstructions import give_instructions
 from HeroShoot import Shoot
+
+from FirstRoundInstructions import give_instructions
 from BackgroundStars import BackgroundStars
+from Outro import OutroWin
+
+from Heroes.Atlas import Atlas
+from Heroes.Nova import Nova
+from Heroes.LighterS import LighterS
+
 
 """
 This file contains main cycle
@@ -37,6 +42,12 @@ class MainGame:
         self.run()
 
     def init_game(self):
+        self.music = random.choice(['InGame 1.mp3', 'InGame 2.mp3', 'InGame 3.mp3', 'InGame 4.mp3', ])
+        if self.music_on:
+            pygame.mixer.music.set_volume(0.3)
+            pygame.mixer.music.load('sounds/' + self.music)
+            pygame.mixer.music.play()
+
         with open('waves.json', mode='r') as json_file:
             self.waves = json.load(json_file)
             json_file.close()
@@ -50,15 +61,18 @@ class MainGame:
             self.hp = 100
         elif self.difficulty == 'Hard':
             self.hp = 20
-        elif self.difficulty == 'God of gamers':
+        elif self.difficulty == 'God Of Gamers':
             self.hp = 1
 
-        self.hero = Hero(self, self.hp, self.all_sprites, self.screen.get_size())
+        # ---
+        self.hero = Nova(self, self.hp, self.all_sprites, self.screen.get_size())
+        # ---
 
         wave = self.waves[f'Wave {str(self.wave_count)}']
         spawned = Spawner(self, wave)
         self.aliens = spawned[0]
         self.lasers = spawned[1]
+        self.ints = spawned[2]
 
     def run(self):
         self.running = True
@@ -68,7 +82,6 @@ class MainGame:
         bg = BackgroundStars(self, 400)
 
         while self.running:
-            # self.screen.fill((0, 0, 0))
             bg.draw()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -91,7 +104,6 @@ class MainGame:
             self.explosion_group.update()
             self.clock.tick(int(self.fps * self.speed))
             pygame.display.flip()
-        # pygame.quit()
 
     def delete_bullet(self):
         for bullet in self.bullets:
@@ -122,6 +134,12 @@ class MainGame:
                         print('Bullet ValueError')
                     bullet.kill()
 
+            if bullet.check_collision(self.ints):
+                if type(bullet) == Bullet:
+                    self.ints[self.ints.index(bullet.check_collision(self.ints))].do_damage(self.hero.damage)
+                    del self.bullets[self.bullets.index(bullet)]
+                    bullet.kill()
+
     def displayText(self, text):
         pygame.font.init()
         font = pygame.font.SysFont('Arial', 50)
@@ -131,8 +149,20 @@ class MainGame:
     def display_hero_stats(self):
         pygame.font.init()
         font = pygame.font.SysFont('Arial', 30)
-        textsurface = font.render('HP: ' + str(self.hero.hp_hero), False, (0, 255, 0))
-        self.screen.blit(textsurface, (self.width - 100, self.height - 50))
+        # textsurface = font.render('HP: ' + str(self.hero.hp_hero), False, (0, 255, 0))
+        # self.screen.blit(textsurface, (self.width - 100, self.height - 50))
+        text_pos = (self.hero.rect.x + 30, self.hero.rect.y + 80)
+        if 70 <= self.hero.hp_hero:
+            textsurface = font.render(str(self.hero.hp_hero), False, (0, 255, 0))
+        elif 30 <= self.hero.hp_hero <= 60:
+            textsurface = font.render(str(self.hero.hp_hero), False, (255, 165, 0))
+        else:
+            textsurface = font.render(str(self.hero.hp_hero), False, (255, 0, 0))
+
+        if self.hero.hp_hero >= 100:
+            text_pos = (self.hero.rect.x + 20, self.hero.rect.y + 80)
+
+        self.screen.blit(textsurface, text_pos)
 
     def update_sprites(self, event):
         for i in self.all_sprites:
@@ -140,25 +170,31 @@ class MainGame:
         self.hero.check_collision()
 
     def enemies_left(self):
-        if len(self.aliens) + len(self.lasers) == 0:
+        if len(self.aliens) + len(self.lasers) + len(self.ints) == 0:
             if not self.wait_new_wave:
                 self.wait_new_wave = True
             else:
-                if self.hero.pos_y <= -50:
+                if self.hero.pos_y <= -50:  # go to next level
                     self.hero.pos_x = self.width / 2
                     self.hero.pos_y = self.height - self.height / 4
                     self.hero.rect.x = self.width / 2
                     self.hero.rect.y = self.height - self.height / 4
+
                     for ability in self.abilities:
                         ability.kill()
+                    self.abilities.clear()
+
                     self.wave_count += 1
                     try:
                         wave = self.waves[f'Wave {str(self.wave_count)}']
                         spawned = Spawner(self, wave)
                         self.aliens = spawned[0]
                         self.lasers = spawned[1]
+                        self.ints = spawned[2]
                     except KeyError:
                         self.running = False
+                        OutroWin((self.width, self.height))
+
                     self.hero.invisible_wall = True
                 elif self.wave_count == 0:  # if first round give instructions
                     give_instructions(self)
@@ -166,7 +202,7 @@ class MainGame:
                     self.hero.invisible_wall = False
 
                 else:
-                    font = pygame.font.Font(None, 60)
+                    font = pygame.font.Font(None, 60)  # draw wave text and arrow
                     text = f'WAVE {str(self.wave_count + 1)}'
                     text_pos = (self.width / 2 - 80, self.height / 4 - 50)
                     self.screen.blit(font.render(text, False, (255, 255, 255)), text_pos)

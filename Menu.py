@@ -6,6 +6,7 @@ import pygame_gui
 from BackgroundStars import BackgroundStars
 from main import MainGame
 from ImageLoader import load_image
+import random
 
 
 class Logo(pygame.sprite.Sprite):
@@ -28,6 +29,12 @@ class Menu:
 
     def run(self):
         pygame.init()
+        self.music = random.choice(['MainMenu_1.mp3', 'MainMenu_2.mp3'])
+        if self.music_on:
+            pygame.mixer.music.set_volume(0.4)
+            pygame.mixer.music.load('sounds/' + self.music)
+            pygame.mixer.music.play()
+
         self.screen = pygame.display.set_mode(self.screen_size)
 
         self.running = True
@@ -68,6 +75,11 @@ class Menu:
                                       (250, 50)),
             text='Back To Menu', manager=manager)
 
+        btn_difficulty = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect((self.width - 190, self.height - 60),
+                                      (180, 50)),
+            text=self.difficulty, manager=manager)
+
         if self.music_on:
             btn_sound = pygame_gui.elements.UIButton(
                 relative_rect=pygame.Rect((10, self.height - 80),
@@ -83,6 +95,7 @@ class Menu:
         btn_size_1920_1080.hide()
         btn_size_600_700.hide()
         btn_size_500_500.hide()
+        btn_difficulty.hide()
         btn_sound.hide()
         btn_return.hide()
         while self.running:
@@ -92,9 +105,9 @@ class Menu:
 
                 if event.type == pygame.USEREVENT:
                     if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
-                        if event.ui_element == btn_start:
+                        if event.ui_element == btn_start:  # start game
                             game = MainGame(self.screen_size, self.difficulty, self.music_on)
-                        elif event.ui_element == btn_settings:
+                        elif event.ui_element == btn_settings:  # open settings
                             btn_start.hide()
                             btn_settings.hide()
                             btn_quit.hide()
@@ -102,23 +115,27 @@ class Menu:
                             btn_size_1920_1080.show()
                             btn_size_600_700.show()
                             btn_size_500_500.show()
+                            btn_difficulty.show()
                             btn_return.show()
                             btn_sound.show()
 
-                        elif event.ui_element == btn_quit:
+                        elif event.ui_element == btn_quit:  # quit game
                             pygame.quit()
                             sys.exit(-1)
 
-                        elif event.ui_element == btn_return:
+                        elif event.ui_element == btn_return:  # close settings
                             btn_size_1920_1080.hide()
                             btn_size_600_700.hide()
                             btn_size_500_500.hide()
+                            btn_difficulty.hide()
                             btn_return.hide()
                             btn_sound.hide()
 
                             btn_start.show()
                             btn_settings.show()
                             btn_quit.show()
+
+                            self.difficulty = btn_difficulty.text
 
                             with open('settings.json', mode='w') as json_file:
                                 new_settings = {"screen_size": self.screen_size,
@@ -127,19 +144,28 @@ class Menu:
                                 new_json = json.dumps(new_settings)
                                 json_file.write(new_json)
 
-                        elif event.ui_element == btn_sound:
+                        elif event.ui_element == btn_sound:  # turn off/on sound
                             if btn_sound.text == 'SoundOn':
                                 btn_sound.set_text('SoundOff')
                                 self.music_on = False
                             else:
                                 btn_sound.set_text('SoundOn')
                                 self.music_on = True
-                        elif event.ui_element == btn_size_1920_1080:
+                        elif event.ui_element == btn_size_1920_1080:  # change screen size
                             self.screen_size = (1920, 1080)
-                        elif event.ui_element == btn_size_600_700:
+                        elif event.ui_element == btn_size_600_700:  # change screen size
                             self.screen_size = (600, 700)
-                        elif event.ui_element == btn_size_500_500:
+                        elif event.ui_element == btn_size_500_500:  # change screen size
                             self.screen_size = (500, 500)
+                        elif event.ui_element == btn_difficulty:
+                            if btn_difficulty.text == 'Low':
+                                btn_difficulty.set_text('Normal')
+                            elif btn_difficulty.text == 'Normal':
+                                btn_difficulty.set_text('Hard')
+                            elif btn_difficulty.text == 'Hard':
+                                btn_difficulty.set_text('God Of Gamers')
+                            else:
+                                btn_difficulty.set_text('Low')
 
                 manager.process_events(event)
 

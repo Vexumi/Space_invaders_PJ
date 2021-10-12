@@ -1,5 +1,9 @@
 import pygame
-from Hero import Hero
+from Heroes.Atlas import Atlas
+from Heroes.Nova import Nova
+from Heroes.EnergyShield import Shield
+# from Heroes.LighterS import Lighter
+
 """
 Type of bullets for Enemy-Laser
 """
@@ -44,7 +48,9 @@ class BulletLaser(pygame.sprite.Sprite):
 
     def check_collision(self, target):
         if pygame.sprite.spritecollide(self, target, False):
-            if type(pygame.sprite.spritecollide(self, target, False)[0]) == type(Hero):
+            if type(pygame.sprite.spritecollide(self, target, False)[0]) == type(Atlas) or \
+                    type(pygame.sprite.spritecollide(self, target, False)[0]) == type(Nova) or \
+                    type(pygame.sprite.spritecollide(self, target, False)[0]) == type(Shield):
                 if self.game.game.music_on:
                     self.sound.stop()
                 self.kill()

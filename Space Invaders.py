@@ -18,6 +18,6 @@ pygame.display.set_caption('Space Invaders')
 
 # создание игры
 if __name__ == '__main__':
-    intro = Intro(screen_size)
+    #intro = Intro(screen_size, music_on)
     game = Menu(screen_size, difficulty, music_on)
     pygame.quit()
