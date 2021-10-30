@@ -28,7 +28,7 @@ class BulletEnemy(pygame.sprite.Sprite):
     def check_collision(self, target):
         if pygame.sprite.spritecollide(self, target, False):
             if type(pygame.sprite.spritecollide(self, target, False)[0]) != type(self.game):
-                self.kill()
                 del self.game.game.bullets[self.game.game.bullets.index(self)]
+                self.kill()
                 return pygame.sprite.spritecollideany(self, target)
         return False

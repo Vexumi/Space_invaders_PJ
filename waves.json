@@ -1,7 +1,11 @@
 {
   "Wave 0": {"Aliens": 0, "Lasers":  0, "SpaceInt": 0, "Abilities": {}},
-  "Wave 1": {"Aliens": 0, "Lasers":  0, "SpaceInt": 2, "Abilities": {"ViewHP":  1}},
-  "Wave 2": {"Aliens": 0, "Lasers":  0, "SpaceInt": 0, "Abilities": {}},
-  "Wave 3": {"Aliens": 2, "Lasers":  1, "SpaceInt": 0, "Abilities": {"Health": 1}},
-  "Wave 4": {"Aliens": 2, "Lasers":  2, "SpaceInt": 0, "Abilities": {"Shotgun": 1}}
+  "Wave 1": {"Aliens": 1, "Lasers":  0, "SpaceInt": 0, "Abilities": {}},
+  "Wave 2": {"Aliens": 1, "Lasers":  0, "SpaceInt": 2, "Abilities": {}},
+  "Wave 3": {"Aliens": 2, "Lasers":  0, "SpaceInt": 1, "Abilities": {"Health": 1}},
+  "Wave 4": {"Aliens": 1, "Lasers":  2, "SpaceInt": 0, "Abilities": {}},
+  "Wave 5": {"Aliens": 2, "Lasers":  2, "SpaceInt": 0, "Abilities": {"ViewHP": 1, "Health": 1}},
+  "Wave 6": {"Aliens": 0, "Lasers":  0, "SpaceInt": 6, "Abilities": {"Shotgun": 1}},
+  "Wave 7": {"Aliens": 2, "Lasers":  2, "SpaceInt": 3, "Abilities": {"Health": 1, "ViewHP": 1, "Shotgun": 1}},
+  "Wave 8": {"Aliens": 1, "Lasers":  2, "SpaceInt": 8, "Abilities": {"Health": 1, "Shotgun": 1}}
 }

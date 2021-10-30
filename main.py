@@ -16,18 +16,19 @@ from Heroes.Atlas import Atlas
 from Heroes.Nova import Nova
 from Heroes.LighterS import LighterS
 
-
 """
 This file contains main cycle
 """
 
 
 class MainGame:
-    def __init__(self, screen_size, difficulty, music_on):
+    def __init__(self, screen_size, difficulty, music_on, ship):
         self.width = screen_size[0]
         self.height = screen_size[1]
         self.difficulty = difficulty
         self.music_on = music_on
+        self.ship = ship
+
         self.all_sprites = pygame.sprite.Group()
         self.wave_count = 0
         self.bullets = []
@@ -38,6 +39,7 @@ class MainGame:
         self.explosion_group = pygame.sprite.Group()
         self.n_aliens = 1
         self.wait_new_wave = False
+
         self.init_game()
         self.run()
 
@@ -54,7 +56,6 @@ class MainGame:
 
         self.screen = pygame.display.set_mode((self.width, self.height))
         self.screen.fill(pygame.Color('black'))
-
         if self.difficulty == 'Low':
             self.hp = 200
         elif self.difficulty == 'Normal':
@@ -65,7 +66,7 @@ class MainGame:
             self.hp = 1
 
         # ---
-        self.hero = Nova(self, self.hp, self.all_sprites, self.screen.get_size())
+        self.hero = eval(f'{self.ship}(self, self.hp, self.all_sprites, self.screen.get_size())')
         # ---
 
         wave = self.waves[f'Wave {str(self.wave_count)}']
@@ -76,12 +77,14 @@ class MainGame:
 
     def run(self):
         self.running = True
-        self.speed = 2.3
+        self.speed = 2
         self.fps = 60
         self.clock = pygame.time.Clock()
-        bg = BackgroundStars(self, 400)
+        bg = BackgroundStars(self, 300, (1, 2))
 
         while self.running:
+            self.delete_ghosted_bullets()
+
             bg.draw()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -90,7 +93,13 @@ class MainGame:
                     sys.exit(-1)
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 or event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
-                    Shoot(self)
+                    bullet_count = 0
+                    for b in self.bullets:
+                        if type(b) == Bullet:
+                            bullet_count += 1
+
+                    if bullet_count < 3:
+                        Shoot(self)
                 eventt = event
 
             self.delete_bullet()
@@ -146,11 +155,14 @@ class MainGame:
         textsurface = font.render(text, False, (44, 0, 62))
         self.screen.blit(textsurface, (110, 160))
 
+    def delete_ghosted_bullets(self):  # fix delete ghost-bullet
+        for b in self.bullets:
+            if len(b.groups()) == 0:
+                b.kill()
+
     def display_hero_stats(self):
         pygame.font.init()
         font = pygame.font.SysFont('Arial', 30)
-        # textsurface = font.render('HP: ' + str(self.hero.hp_hero), False, (0, 255, 0))
-        # self.screen.blit(textsurface, (self.width - 100, self.height - 50))
         text_pos = (self.hero.rect.x + 30, self.hero.rect.y + 80)
         if 70 <= self.hero.hp_hero:
             textsurface = font.render(str(self.hero.hp_hero), False, (0, 255, 0))

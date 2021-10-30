@@ -96,6 +96,7 @@ class SpaceInt(pygame.sprite.Sprite):
         if self.hp <= 0:
             del self.game.ints[self.game.ints.index(self)]
             schedule.clear(f'shoot {self.alien_id}')
+            schedule.clear(f'start_shoot {self.alien_id}')
             self.game.explosion_group.add(Explosion(self.rect.x, self.rect.y, 2))
             self.kill()
 

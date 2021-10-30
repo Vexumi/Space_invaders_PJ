@@ -3,6 +3,7 @@ import json
 from main import MainGame
 from Menu import Menu
 from Intro import Intro
+
 with open('settings.json', mode='r') as json_file:
     json_data = json.load(json_file)
     json_file.close()
